@@ -3,13 +3,8 @@
     windows_subsystem = "windows"
 )]
 
-use tauri::{ActivationPolicy, GlobalShortcutManager, Manager, SystemTray};
-
-// Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
-#[tauri::command]
-fn greet(name: &str) -> String {
-    format!("Hello, {}! You've been greeted from Rust!", name)
-}
+use tauri::{ActivationPolicy, GlobalShortcutManager, Manager};
+use tauri::{CustomMenuItem, SystemTray, SystemTrayEvent, SystemTrayMenu};
 
 #[tauri::command]
 fn save_link(url: &str, name: &str, desc: &str) -> String {
@@ -31,14 +26,19 @@ fn toggle_main_window_visibility(app: &tauri::AppHandle) {
 }
 
 fn main() {
-    let tray = SystemTray::new();
+    let quit = CustomMenuItem::new("quit".to_string(), "Quit");
+    let tray_menu = SystemTrayMenu::new().add_item(quit);
+    let tray = SystemTray::new().with_menu(tray_menu);
+    let context = tauri::generate_context!();
+
+    let app_dir = tauri::api::path::app_data_dir(context.config()).unwrap();
+    println!("App dir: {:?}", app_dir);
 
     let mut app = tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![greet])
         .invoke_handler(tauri::generate_handler![save_link])
         .system_tray(tray)
         .on_system_tray_event(|app, event| match event {
-            tauri::SystemTrayEvent::LeftClick { .. } => {
+            SystemTrayEvent::LeftClick { .. } => {
                 let window = match app.get_window("main") {
                     Some(window) => window,
                     None => return,
@@ -50,6 +50,12 @@ fn main() {
                     window.set_focus().unwrap();
                 }
             }
+            SystemTrayEvent::MenuItemClick { id, .. } => match id.as_str() {
+                "quit" => {
+                    std::process::exit(0);
+                }
+                _ => {}
+            },
             _ => {
                 println!("Other event");
             }
@@ -62,7 +68,7 @@ fn main() {
             }
             _ => {}
         })
-        .build(tauri::generate_context!())
+        .build(context)
         .expect("error while building tauri application");
 
     let app_handle = app.handle();
