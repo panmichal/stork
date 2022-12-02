@@ -3,11 +3,36 @@
     windows_subsystem = "windows"
 )]
 
+use std::fs::OpenOptions;
+use std::io::Write;
+use std::ops::Deref;
+use std::sync::Mutex;
 use tauri::{ActivationPolicy, GlobalShortcutManager, Manager};
 use tauri::{CustomMenuItem, SystemTray, SystemTrayEvent, SystemTrayMenu};
 
+struct State {
+    data_path: Mutex<String>,
+}
+
 #[tauri::command]
-fn save_link(url: &str, name: &str, desc: &str) -> String {
+fn save_link(state: tauri::State<State>, url: &str, name: &str, desc: &str) -> String {
+    let guard = state.data_path.lock().unwrap();
+    let data_dir = guard.deref();
+    let file_path = format!("{}/links.txt", data_dir);
+    let string = format!("{};;{};;{}\r", url, name, desc);
+
+    if !std::path::Path::new(data_dir).is_dir() {
+        std::fs::create_dir_all(data_dir).unwrap();
+    }
+
+    println!("To save: {}", &string);
+    let mut file = OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(file_path)
+        .unwrap();
+    file.write_all(string.as_bytes()).unwrap();
+
     println!("Saving link: {} - {} - {}", url, name, desc);
     format!("Saving link: {} {} {}", url, name, desc)
 }
@@ -31,10 +56,17 @@ fn main() {
     let tray = SystemTray::new().with_menu(tray_menu);
     let context = tauri::generate_context!();
 
-    let app_dir = tauri::api::path::app_data_dir(context.config()).unwrap();
+    let app_dir = tauri::api::path::app_data_dir(context.config())
+        .unwrap()
+        .to_str()
+        .unwrap()
+        .to_string();
     println!("App dir: {:?}", app_dir);
 
     let mut app = tauri::Builder::default()
+        .manage(State {
+            data_path: Mutex::new(app_dir),
+        })
         .invoke_handler(tauri::generate_handler![save_link])
         .system_tray(tray)
         .on_system_tray_event(|app, event| match event {

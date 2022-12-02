@@ -42,7 +42,6 @@ pub fn app() -> Html {
     {
         let state = state.clone();
         let state_dep = state.clone();
-        let s = state.clone();
         use_effect_with_deps(
             move |_| {
                 spawn_local(async move {
