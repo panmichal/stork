@@ -1,6 +1,8 @@
 [package]
-name = "media-links-ui"
+name = "stork-links"
 version = "0.0.0"
+authors = ["Michał Strzelczyk"]
+license = "MIT"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html

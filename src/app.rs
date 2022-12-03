@@ -1,6 +1,8 @@
 use serde::{Deserialize, Serialize};
 use serde_wasm_bindgen::to_value;
+use std::ops::Deref;
 use wasm_bindgen::prelude::*;
+use wasm_bindgen::JsCast;
 use wasm_bindgen_futures::spawn_local;
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
@@ -14,11 +16,17 @@ extern "C" {
     fn log(s: &str);
 }
 
-#[derive(Serialize, Deserialize, PartialEq, Default)]
+#[derive(Serialize, Deserialize, PartialEq, Default, Clone)]
 struct State {
     url: String,
     name: String,
     desc: String,
+}
+
+#[derive(Serialize, Deserialize, PartialEq)]
+enum FormState {
+    Ready,
+    Saving,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -34,64 +42,86 @@ pub fn app() -> Html {
     let url_input_ref = use_ref(|| NodeRef::default());
     let desc_input_ref = use_ref(|| NodeRef::default());
 
-    let state = use_state(|| State {
+    let fields_state = use_state(|| State {
         url: String::new(),
         name: String::new(),
         desc: String::new(),
     });
-    {
-        let state = state.clone();
-        let state_dep = state.clone();
-        use_effect_with_deps(
-            move |_| {
-                spawn_local(async move {
-                    if state.url.is_empty() || state.name.is_empty() || state.desc.is_empty() {
-                        return;
-                    }
+    let form_state = use_state(|| FormState::Ready);
+    let cloned_state = fields_state.clone();
+    let on_url_change = Callback::from(move |event: Event| {
+        let value = event
+            .target()
+            .unwrap()
+            .unchecked_into::<HtmlInputElement>()
+            .value();
 
-                    let new_msg = invoke(
-                        "save_link",
-                        to_value(&SaveArgs {
-                            url: &*state.url,
-                            name: &*state.name,
-                            desc: &*state.desc,
-                        })
-                        .unwrap(),
-                    )
-                    .await;
-                    log(&new_msg.as_string().unwrap());
-                });
+        cloned_state.set(State {
+            url: value,
+            ..cloned_state.deref().clone()
+        });
+    });
 
-                || {}
-            },
-            state_dep,
-        );
-    }
+    let cloned_state = fields_state.clone();
+    let on_name_change = Callback::from(move |event: Event| {
+        let value = event
+            .target()
+            .unwrap()
+            .unchecked_into::<HtmlInputElement>()
+            .value();
+
+        cloned_state.set(State {
+            name: value,
+            ..cloned_state.deref().clone()
+        });
+    });
+
+    let cloned_state = fields_state.clone();
+    let on_desc_change = Callback::from(move |event: Event| {
+        let value = event
+            .target()
+            .unwrap()
+            .unchecked_into::<HtmlInputElement>()
+            .value();
+
+        cloned_state.set(State {
+            desc: value,
+            ..cloned_state.deref().clone()
+        });
+    });
 
     let save: Callback<MouseEvent> = {
-        let state = state.clone();
-        let url_input_ref = url_input_ref.clone();
-        let name_input_ref = name_input_ref.clone();
-        let desc_input_ref = desc_input_ref.clone();
+        let state = fields_state.clone();
+        let state2 = fields_state.clone();
         Callback::from(move |_| {
-            state.set(State {
-                url: url_input_ref.cast::<HtmlInputElement>().unwrap().value(),
-                name: name_input_ref.cast::<HtmlInputElement>().unwrap().value(),
-                desc: desc_input_ref.cast::<HtmlInputElement>().unwrap().value(),
+            let state = state.clone();
+            spawn_local(async move {
+                log("use_effect_with_deps");
+                if state.url.is_empty() {
+                    return;
+                }
+                log("use_effect_with_deps2");
+
+                let new_msg = invoke(
+                    "save_link",
+                    to_value(&SaveArgs {
+                        url: &*state.url,
+                        name: &*state.name,
+                        desc: &*state.desc,
+                    })
+                    .unwrap(),
+                )
+                .await;
+                log("use_effect_with_deps3");
+                log(&new_msg.as_string().unwrap());
             });
+
+            state2.set(State::default());
         })
     };
 
     html! {
         <main class="container">
-            // <div class="row">
-            //     <a href="https://tauri.app" target="_blank">
-            //         <img src="public/tauri.svg" class="logo tauri" alt="Tauri logo"/>
-            //     </a>
-            //     <a href="https://yew.rs" target="_blank">
-            //         <img src="public/yew.png" class="logo yew" alt="Yew logo"/>
-            //     </a>
-            // </div>
 
             // <p>{"Click on the Tauri and Yew logos to learn more."}</p>
             //<a href="https://www.flaticon.com/free-icons/stork" title="stork icons">Stork icons created by Freepik - Flaticon</a>
@@ -106,13 +136,13 @@ pub fn app() -> Html {
             // </p>
 
             <div class="row">
-                <input id="url-input" ref={&*url_input_ref} placeholder="Enter a url" />
+                <input id="url-input" ref={&*url_input_ref} placeholder="Enter a url" onchange={on_url_change} value={fields_state.deref().clone().url} />
             </div>
             <div class="row">
-                <input id="name-input" ref={&*name_input_ref} placeholder="Name" />
+                <input id="name-input" ref={&*name_input_ref} placeholder="Name" onchange={on_name_change} value={fields_state.deref().clone().name} />
             </div>
             <div class="row">
-            <input id="desc-input" ref={&*desc_input_ref} placeholder="Description" />
+            <input id="desc-input" ref={&*desc_input_ref} placeholder="Description" onchange={on_desc_change} value={fields_state.deref().clone().desc} />
 
             </div>
             <div class="row"><button class="action-button" type="button" onclick={save}>{"Save"}</button></div>
