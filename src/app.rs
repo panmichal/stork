@@ -47,7 +47,6 @@ pub fn app() -> Html {
         name: String::new(),
         desc: String::new(),
     });
-    let form_state = use_state(|| FormState::Ready);
     let cloned_state = fields_state.clone();
     let on_url_change = Callback::from(move |event: Event| {
         let value = event
@@ -123,17 +122,9 @@ pub fn app() -> Html {
     html! {
         <main class="container">
 
-            // <p>{"Click on the Tauri and Yew logos to learn more."}</p>
             //<a href="https://www.flaticon.com/free-icons/stork" title="stork icons">Stork icons created by Freepik - Flaticon</a>
             //<a href="https://www.flaticon.com/free-icons/heron" title="heron icons">Heron icons created by edt.im - Flaticon</a>
-            // <p>
-            //     {"Recommended IDE setup: "}
-            //     <a href="https://code.visualstudio.com/" target="_blank">{"VS Code"}</a>
-            //     {" + "}
-            //     <a href="https://github.com/tauri-apps/tauri-vscode" target="_blank">{"Tauri"}</a>
-            //     {" + "}
-            //     <a href="https://github.com/rust-lang/rust-analyzer" target="_blank">{"rust-analyzer"}</a>
-            // </p>
+
 
             <div class="row">
                 <input id="url-input" ref={&*url_input_ref} placeholder="Enter a url" onchange={on_url_change} value={fields_state.deref().clone().url} />
