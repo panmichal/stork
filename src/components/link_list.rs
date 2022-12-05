@@ -1,11 +1,26 @@
+use super::link::Link;
+use crate::models::link::Link as LinkModel;
 use yew::prelude::*;
 
+#[derive(Properties, PartialEq)]
+pub struct Props {
+    pub links: Vec<LinkModel>,
+}
+
 #[function_component(LinkList)]
-pub fn link_list() -> Html {
+pub fn link_list(props: &Props) -> Html {
     html! {
         <div>
             <h1>{"Link List"}</h1>
-            {"Some link"}
+            <ul>
+                { for props.links.iter().map(|link| {
+                    html! {
+                        <li>
+                            <Link url={link.url.clone()} name={link.name.clone()} desc={link.desc.clone()}/>
+                        </li>
+                    }
+                })}
+                </ul>
         </div>
     }
 }

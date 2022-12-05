@@ -1,4 +1,6 @@
+use crate::components::link;
 use crate::components::LinkList;
+use crate::models::link::Link;
 use serde::{Deserialize, Serialize};
 use serde_wasm_bindgen::from_value;
 use serde_wasm_bindgen::to_value;
@@ -16,13 +18,6 @@ extern "C" {
 
     #[wasm_bindgen(js_namespace = console)]
     fn log(s: &str);
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-struct Link {
-    url: String,
-    name: String,
-    desc: String,
 }
 
 #[derive(Serialize, Deserialize, PartialEq, Default, Clone)]
@@ -47,21 +42,19 @@ struct SaveArgs<'a> {
 
 #[function_component(App)]
 pub fn app() -> Html {
+    let links_state = use_state(|| vec![]);
     let fields_state = use_state(|| State {
         url: String::new(),
         name: String::new(),
         desc: String::new(),
     });
     {
+        let links_state = links_state.clone();
         use_effect(move || {
             spawn_local(async move {
-                log("use_effect_with_deps");
-                log("use_effect_with_deps2");
-
                 let new_msg = invoke("get_links", to_value(&()).unwrap()).await;
-                log("use_effect_with_deps3");
                 let links: Vec<Link> = from_value(new_msg).unwrap();
-                log(format!("Links: {:?}", links).as_str());
+                links_state.set(links);
             });
             || {}
         });
@@ -155,7 +148,7 @@ pub fn app() -> Html {
             </div>
             <div class="row"><button class="action-button" type="button" onclick={save}>{"Save"}</button></div>
             <div class="row">
-                <LinkList />
+                <LinkList links={(*links_state).clone()} />
                 </div>
         </main>
     }
