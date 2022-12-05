@@ -7,6 +7,11 @@ pub struct Link {
     pub desc: String,
 }
 
+#[derive(Debug, PartialEq)]
+pub enum LinkParseError {
+    InvalidFormat,
+}
+
 impl Link {
     pub fn new(url: String, name: String, desc: String) -> Self {
         Self { url, name, desc }
@@ -17,7 +22,7 @@ impl Link {
     }
 }
 
-pub fn parse_links(links: &String) -> Result<Vec<Link>, &str> {
+pub fn parse_links(links: &String) -> Result<Vec<Link>, LinkParseError> {
     let mut result = Vec::new();
     for line in links.lines() {
         let link = parse_link_line(line)?;
@@ -26,23 +31,23 @@ pub fn parse_links(links: &String) -> Result<Vec<Link>, &str> {
     Ok(result)
 }
 
-fn parse_link_line(line: &str) -> Result<Link, &str> {
+fn parse_link_line(line: &str) -> Result<Link, LinkParseError> {
     let mut parts = line.split(";;");
-    let url = parts.next().ok_or("Invalid link line")?;
-    let name = parts.next().ok_or("Invalid link line")?;
-    let desc = parts.next().ok_or("Invalid link line")?;
+    let url = parts.next().ok_or(LinkParseError::InvalidFormat)?;
+    let name = parts.next().ok_or(LinkParseError::InvalidFormat)?;
+    let desc = parts.next().ok_or(LinkParseError::InvalidFormat)?;
     let link = Link::new(url.to_string(), name.to_string(), desc.to_string());
     if link.is_valid() {
         Ok(link)
     } else {
-        Err("Invalid link line")
+        Err(LinkParseError::InvalidFormat)
     }
 }
 
+#[cfg(test)]
 mod test {
 
     use super::*;
-
     #[test]
     fn test_parse_valid_links() {
         let links = "https://www.example.com;;Example;;Example description\nhttps://www.example2.com;;Example2;;Example2 description".to_string();
@@ -54,7 +59,7 @@ mod test {
     fn test_invalid_line_format() {
         let links = "https://www.example.com;;Example;;Example description\nhttps://www.example2.com;;Example2".to_string();
         let result = parse_links(&links);
-        assert_eq!(result.err(), Some("Invalid link line"));
+        assert_eq!(result.err(), Some(LinkParseError::InvalidFormat));
     }
 
     #[test]
@@ -111,6 +116,6 @@ mod test {
     fn test_missing_url() {
         let links = ";;Example;;Example description\nhttps://www.example2.com;;Example2;;Example2 description".to_string();
         let result = parse_links(&links);
-        assert_eq!(result.err(), Some("Invalid link line"));
+        assert_eq!(result.err(), Some(LinkParseError::InvalidFormat));
     }
 }
