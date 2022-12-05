@@ -122,9 +122,9 @@ pub fn app() -> Html {
                 let new_msg = invoke(
                     "save_link",
                     to_value(&SaveArgs {
-                        url: &*state.url,
-                        name: &*state.name,
-                        desc: &*state.desc,
+                        url: &state.url,
+                        name: &state.name,
+                        desc: &state.desc,
                     })
                     .unwrap(),
                 )
