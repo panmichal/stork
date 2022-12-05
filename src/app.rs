@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use serde_wasm_bindgen::from_value;
 use serde_wasm_bindgen::to_value;
 use std::ops::Deref;
 use wasm_bindgen::prelude::*;
@@ -14,6 +15,13 @@ extern "C" {
 
     #[wasm_bindgen(js_namespace = console)]
     fn log(s: &str);
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+struct Link {
+    url: String,
+    name: String,
+    desc: String,
 }
 
 #[derive(Serialize, Deserialize, PartialEq, Default, Clone)]
@@ -47,6 +55,22 @@ pub fn app() -> Html {
         name: String::new(),
         desc: String::new(),
     });
+    {
+        let state = fields_state.clone();
+        use_effect(move || {
+            spawn_local(async move {
+                log("use_effect_with_deps");
+                log("use_effect_with_deps2");
+
+                let new_msg = invoke("get_links", to_value(&()).unwrap()).await;
+                log("use_effect_with_deps3");
+                let links: Vec<Link> = from_value(new_msg).unwrap();
+                log(format!("Links: {:?}", links).as_str());
+            });
+            || {}
+        });
+    }
+
     let cloned_state = fields_state.clone();
     let on_url_change = Callback::from(move |event: Event| {
         let value = event
@@ -95,11 +119,9 @@ pub fn app() -> Html {
         Callback::from(move |_| {
             let state = state.clone();
             spawn_local(async move {
-                log("use_effect_with_deps");
                 if state.url.is_empty() {
                     return;
                 }
-                log("use_effect_with_deps2");
 
                 let new_msg = invoke(
                     "save_link",
@@ -111,7 +133,6 @@ pub fn app() -> Html {
                     .unwrap(),
                 )
                 .await;
-                log("use_effect_with_deps3");
                 log(&new_msg.as_string().unwrap());
             });
 
