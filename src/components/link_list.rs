@@ -12,7 +12,7 @@ pub fn link_list(props: &Props) -> Html {
     html! {
         <div>
             <h1>{"Link List"}</h1>
-            <ul>
+            <ol class={"link-list"}>
                 { for props.links.iter().map(|link| {
                     html! {
                         <li>
@@ -20,7 +20,7 @@ pub fn link_list(props: &Props) -> Html {
                         </li>
                     }
                 })}
-                </ul>
+                </ol>
         </div>
     }
 }

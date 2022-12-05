@@ -9,11 +9,16 @@ pub struct Props {
 
 #[function_component(Link)]
 pub fn link(props: &Props) -> Html {
+    let name = if &props.name == "" {
+        props.url.clone()
+    } else {
+        props.name.clone()
+    };
+
     html! {
         <div>
-            <span>{props.url.clone()}</span>
-            <span>{props.name.clone()}</span>
-            <span>{props.desc.clone()}</span>
+            <a href={props.url.clone()}>{name}</a>
+            // <span>{props.desc.clone()}</span>
         </div>
     }
 }
