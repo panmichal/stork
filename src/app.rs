@@ -1,3 +1,4 @@
+use crate::components::LinkList;
 use serde::{Deserialize, Serialize};
 use serde_wasm_bindgen::from_value;
 use serde_wasm_bindgen::to_value;
@@ -46,17 +47,12 @@ struct SaveArgs<'a> {
 
 #[function_component(App)]
 pub fn app() -> Html {
-    let name_input_ref = use_ref(|| NodeRef::default());
-    let url_input_ref = use_ref(|| NodeRef::default());
-    let desc_input_ref = use_ref(|| NodeRef::default());
-
     let fields_state = use_state(|| State {
         url: String::new(),
         name: String::new(),
         desc: String::new(),
     });
     {
-        let state = fields_state.clone();
         use_effect(move || {
             spawn_local(async move {
                 log("use_effect_with_deps");
@@ -148,17 +144,19 @@ pub fn app() -> Html {
 
 
             <div class="row">
-                <input id="url-input" ref={&*url_input_ref} placeholder="Enter a url" onchange={on_url_change} value={fields_state.deref().clone().url} />
+                <input id="url-input" placeholder="Enter a url" onchange={on_url_change} value={fields_state.deref().clone().url} />
             </div>
             <div class="row">
-                <input id="name-input" ref={&*name_input_ref} placeholder="Name" onchange={on_name_change} value={fields_state.deref().clone().name} />
+                <input id="name-input" placeholder="Name" onchange={on_name_change} value={fields_state.deref().clone().name} />
             </div>
             <div class="row">
-            <input id="desc-input" ref={&*desc_input_ref} placeholder="Description" onchange={on_desc_change} value={fields_state.deref().clone().desc} />
+            <input id="desc-input" placeholder="Description" onchange={on_desc_change} value={fields_state.deref().clone().desc} />
 
             </div>
             <div class="row"><button class="action-button" type="button" onclick={save}>{"Save"}</button></div>
-
+            <div class="row">
+                <LinkList />
+                </div>
         </main>
     }
 }
