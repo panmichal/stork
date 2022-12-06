@@ -1,5 +1,5 @@
-use crate::components::LinkList;
-use crate::models::link::Link;
+use crate::components::navigation::Navigation;
+use crate::models::link::Link as LinkModel;
 use serde::{Deserialize, Serialize};
 use serde_wasm_bindgen::from_value;
 use serde_wasm_bindgen::to_value;
@@ -8,7 +8,9 @@ use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 use wasm_bindgen_futures::spawn_local;
 use web_sys::HtmlInputElement;
+use yew::functional::*;
 use yew::prelude::*;
+use yew_router::prelude::*;
 
 #[wasm_bindgen]
 extern "C" {
@@ -17,6 +19,25 @@ extern "C" {
 
     #[wasm_bindgen(js_namespace = console)]
     fn log(s: &str);
+}
+
+#[derive(Clone, Routable, PartialEq)]
+pub enum Route {
+    #[at("/")]
+    Add,
+    #[at("/show")]
+    Show,
+    #[not_found]
+    #[at("/404")]
+    NotFound,
+}
+
+fn switch(routes: Route) -> Html {
+    match routes {
+        Route::Add => html! { <AddForm /> },
+        Route::Show => html! { <h1>{ "Home" }</h1> },
+        Route::NotFound => html! { <h1>{ "404" }</h1> },
+    }
 }
 
 #[derive(Serialize, Deserialize, PartialEq, Default, Clone)]
@@ -41,6 +62,23 @@ struct SaveArgs<'a> {
 
 #[function_component(App)]
 pub fn app() -> Html {
+    html! {
+        <main class="container">
+
+            //<a href="https://www.flaticon.com/free-icons/stork" title="stork icons">Stork icons created by Freepik - Flaticon</a>
+            //<a href="https://www.flaticon.com/free-icons/heron" title="heron icons">Heron icons created by edt.im - Flaticon</a>
+
+
+            <BrowserRouter>
+            <Navigation />
+            <Switch<Route> render={switch} />
+        </BrowserRouter>
+        </main>
+    }
+}
+
+#[function_component(AddForm)]
+fn add_form() -> Html {
     let links_state = use_state(|| vec![]);
     let fields_state = use_state(|| State {
         url: String::new(),
@@ -52,7 +90,7 @@ pub fn app() -> Html {
         use_effect(move || {
             spawn_local(async move {
                 let new_msg = invoke("get_links", to_value(&()).unwrap()).await;
-                let links: Vec<Link> = from_value(new_msg).unwrap();
+                let links: Vec<LinkModel> = from_value(new_msg).unwrap();
                 links_state.set(links);
             });
             || {}
@@ -129,26 +167,21 @@ pub fn app() -> Html {
     };
 
     html! {
-        <main class="container">
+        <>
+        <div class="row">
+        <input id="url-input" placeholder="URL" onchange={on_url_change} value={fields_state.deref().clone().url} />
+    </div>
+    <div class="row">
+        <input id="name-input" placeholder="Name" onchange={on_name_change} value={fields_state.deref().clone().name} />
+    </div>
+    <div class="row">
+    <input id="desc-input" placeholder="Description" onchange={on_desc_change} value={fields_state.deref().clone().desc} />
 
-            //<a href="https://www.flaticon.com/free-icons/stork" title="stork icons">Stork icons created by Freepik - Flaticon</a>
-            //<a href="https://www.flaticon.com/free-icons/heron" title="heron icons">Heron icons created by edt.im - Flaticon</a>
-
-
-            <div class="row">
-                <input id="url-input" placeholder="Enter a url" onchange={on_url_change} value={fields_state.deref().clone().url} />
-            </div>
-            <div class="row">
-                <input id="name-input" placeholder="Name" onchange={on_name_change} value={fields_state.deref().clone().name} />
-            </div>
-            <div class="row">
-            <input id="desc-input" placeholder="Description" onchange={on_desc_change} value={fields_state.deref().clone().desc} />
-
-            </div>
-            <div class="row-right"><button class="action-button" type="button" onclick={save}>{"Save"}</button></div>
-            <div class="row">
-                // <LinkList links={(*links_state).clone()} />
-                </div>
-        </main>
+    </div>
+    <div class="row-right"><button class="action-button" type="button" onclick={save}>{"Save"}</button></div>
+    <div class="row">
+        // <LinkList links={(*links_state).clone()} />
+        </div>
+        </>
     }
 }

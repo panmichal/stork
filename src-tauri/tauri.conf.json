@@ -7,7 +7,7 @@
     "withGlobalTauri": true
   },
   "package": {
-    "productName": "media-links",
+    "productName": "Stork",
     "version": "0.0.0"
   },
   "tauri": {
@@ -63,7 +63,7 @@
         "fullscreen": false,
         "height": 400,
         "resizable": true,
-        "title": "media-links",
+        "title": "Stork",
         "width": 600
       }
     ],
