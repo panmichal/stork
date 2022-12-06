@@ -1,4 +1,7 @@
+use crate::components::LinkList;
+use crate::models::link::Link;
 use serde::{Deserialize, Serialize};
+use serde_wasm_bindgen::from_value;
 use serde_wasm_bindgen::to_value;
 use std::ops::Deref;
 use wasm_bindgen::prelude::*;
@@ -38,15 +41,24 @@ struct SaveArgs<'a> {
 
 #[function_component(App)]
 pub fn app() -> Html {
-    let name_input_ref = use_ref(|| NodeRef::default());
-    let url_input_ref = use_ref(|| NodeRef::default());
-    let desc_input_ref = use_ref(|| NodeRef::default());
-
+    let links_state = use_state(|| vec![]);
     let fields_state = use_state(|| State {
         url: String::new(),
         name: String::new(),
         desc: String::new(),
     });
+    {
+        let links_state = links_state.clone();
+        use_effect(move || {
+            spawn_local(async move {
+                let new_msg = invoke("get_links", to_value(&()).unwrap()).await;
+                let links: Vec<Link> = from_value(new_msg).unwrap();
+                links_state.set(links);
+            });
+            || {}
+        });
+    }
+
     let cloned_state = fields_state.clone();
     let on_url_change = Callback::from(move |event: Event| {
         let value = event
@@ -95,23 +107,20 @@ pub fn app() -> Html {
         Callback::from(move |_| {
             let state = state.clone();
             spawn_local(async move {
-                log("use_effect_with_deps");
                 if state.url.is_empty() {
                     return;
                 }
-                log("use_effect_with_deps2");
 
                 let new_msg = invoke(
                     "save_link",
                     to_value(&SaveArgs {
-                        url: &*state.url,
-                        name: &*state.name,
-                        desc: &*state.desc,
+                        url: &state.url,
+                        name: &state.name,
+                        desc: &state.desc,
                     })
                     .unwrap(),
                 )
                 .await;
-                log("use_effect_with_deps3");
                 log(&new_msg.as_string().unwrap());
             });
 
@@ -127,17 +136,19 @@ pub fn app() -> Html {
 
 
             <div class="row">
-                <input id="url-input" ref={&*url_input_ref} placeholder="Enter a url" onchange={on_url_change} value={fields_state.deref().clone().url} />
+                <input id="url-input" placeholder="Enter a url" onchange={on_url_change} value={fields_state.deref().clone().url} />
             </div>
             <div class="row">
-                <input id="name-input" ref={&*name_input_ref} placeholder="Name" onchange={on_name_change} value={fields_state.deref().clone().name} />
+                <input id="name-input" placeholder="Name" onchange={on_name_change} value={fields_state.deref().clone().name} />
             </div>
             <div class="row">
-            <input id="desc-input" ref={&*desc_input_ref} placeholder="Description" onchange={on_desc_change} value={fields_state.deref().clone().desc} />
+            <input id="desc-input" placeholder="Description" onchange={on_desc_change} value={fields_state.deref().clone().desc} />
 
             </div>
-            <div class="row"><button class="action-button" type="button" onclick={save}>{"Save"}</button></div>
-
+            <div class="row-right"><button class="action-button" type="button" onclick={save}>{"Save"}</button></div>
+            <div class="row">
+                // <LinkList links={(*links_state).clone()} />
+                </div>
         </main>
     }
 }

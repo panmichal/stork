@@ -4,11 +4,13 @@
 )]
 
 use std::fs::OpenOptions;
-use std::io::Write;
+use std::io::{Read, Write};
 use std::ops::Deref;
 use std::sync::Mutex;
 use tauri::{ActivationPolicy, GlobalShortcutManager, Manager};
 use tauri::{CustomMenuItem, SystemTray, SystemTrayEvent, SystemTrayMenu};
+
+mod links;
 
 struct State {
     data_path: Mutex<String>,
@@ -19,7 +21,7 @@ fn save_link(state: tauri::State<State>, url: &str, name: &str, desc: &str) -> S
     let guard = state.data_path.lock().unwrap();
     let data_dir = guard.deref();
     let file_path = format!("{}/links.txt", data_dir);
-    let string = format!("{};;{};;{}\r", url, name, desc);
+    let string = format!("{};;{};;{}\n", url, name, desc);
 
     if !std::path::Path::new(data_dir).is_dir() {
         std::fs::create_dir_all(data_dir).unwrap();
@@ -33,8 +35,24 @@ fn save_link(state: tauri::State<State>, url: &str, name: &str, desc: &str) -> S
         .unwrap();
     file.write_all(string.as_bytes()).unwrap();
 
-    println!("Saving link: {} - {} - {}", url, name, desc);
     format!("Saving link: {} {} {}", url, name, desc)
+}
+#[tauri::command]
+fn get_links(state: tauri::State<State>) -> Vec<links::Link> {
+    let guard = state.data_path.lock().unwrap();
+    let data_dir = guard.deref();
+    let file_path = format!("{}/links.txt", data_dir);
+
+    let links = if std::path::Path::new(&file_path).is_file() {
+        let mut file = OpenOptions::new().read(true).open(file_path).unwrap();
+        let mut contents = String::new();
+        file.read_to_string(&mut contents).unwrap();
+
+        contents
+    } else {
+        String::new()
+    };
+    links::parse_links(&links).unwrap()
 }
 
 fn toggle_main_window_visibility(app: &tauri::AppHandle) {
@@ -67,7 +85,7 @@ fn main() {
         .manage(State {
             data_path: Mutex::new(app_dir),
         })
-        .invoke_handler(tauri::generate_handler![save_link])
+        .invoke_handler(tauri::generate_handler![save_link, get_links])
         .system_tray(tray)
         .on_system_tray_event(|app, event| match event {
             SystemTrayEvent::LeftClick { .. } => {
