@@ -1,4 +1,5 @@
-use crate::components::navigation::Navigation;
+use crate::components::LinkList;
+use crate::components::Navigation;
 use crate::models::link::Link as LinkModel;
 use serde::{Deserialize, Serialize};
 use serde_wasm_bindgen::from_value;
@@ -35,7 +36,7 @@ pub enum Route {
 fn switch(routes: Route) -> Html {
     match routes {
         Route::Add => html! { <AddForm /> },
-        Route::Show => html! { <h1>{ "Home" }</h1> },
+        Route::Show => html! { <LinkList /> },
         Route::NotFound => html! { <h1>{ "404" }</h1> },
     }
 }
@@ -179,9 +180,6 @@ fn add_form() -> Html {
 
     </div>
     <div class="row-right"><button class="action-button" type="button" onclick={save}>{"Save"}</button></div>
-    <div class="row">
-        // <LinkList links={(*links_state).clone()} />
-        </div>
         </>
     }
 }

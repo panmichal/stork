@@ -5,3 +5,4 @@ pub mod link;
 pub use link::Link;
 
 pub mod navigation;
+pub use navigation::Navigation;
