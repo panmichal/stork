@@ -1,8 +1,6 @@
 use crate::components::LinkList;
 use crate::components::Navigation;
-use crate::models::link::Link as LinkModel;
 use serde::{Deserialize, Serialize};
-use serde_wasm_bindgen::from_value;
 use serde_wasm_bindgen::to_value;
 use std::ops::Deref;
 use wasm_bindgen::prelude::*;
@@ -65,11 +63,8 @@ struct SaveArgs<'a> {
 pub fn app() -> Html {
     html! {
         <main class="container">
-
             //<a href="https://www.flaticon.com/free-icons/stork" title="stork icons">Stork icons created by Freepik - Flaticon</a>
             //<a href="https://www.flaticon.com/free-icons/heron" title="heron icons">Heron icons created by edt.im - Flaticon</a>
-
-
             <BrowserRouter>
             <Navigation />
             <Switch<Route> render={switch} />
@@ -80,23 +75,11 @@ pub fn app() -> Html {
 
 #[function_component(AddForm)]
 fn add_form() -> Html {
-    let links_state = use_state(|| vec![]);
     let fields_state = use_state(|| State {
         url: String::new(),
         name: String::new(),
         desc: String::new(),
     });
-    {
-        let links_state = links_state.clone();
-        use_effect(move || {
-            spawn_local(async move {
-                let new_msg = invoke("get_links", to_value(&()).unwrap()).await;
-                let links: Vec<LinkModel> = from_value(new_msg).unwrap();
-                links_state.set(links);
-            });
-            || {}
-        });
-    }
 
     let cloned_state = fields_state.clone();
     let on_url_change = Callback::from(move |event: Event| {

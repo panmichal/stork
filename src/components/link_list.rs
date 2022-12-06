@@ -3,7 +3,6 @@ use crate::models::link::Link as LinkModel;
 use serde_wasm_bindgen::from_value;
 use serde_wasm_bindgen::to_value;
 use wasm_bindgen::prelude::*;
-use wasm_bindgen::JsCast;
 use wasm_bindgen_futures::spawn_local;
 use yew::prelude::*;
 
