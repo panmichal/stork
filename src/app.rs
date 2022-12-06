@@ -63,8 +63,6 @@ struct SaveArgs<'a> {
 pub fn app() -> Html {
     html! {
         <main class="container">
-            //<a href="https://www.flaticon.com/free-icons/stork" title="stork icons">Stork icons created by Freepik - Flaticon</a>
-            //<a href="https://www.flaticon.com/free-icons/heron" title="heron icons">Heron icons created by edt.im - Flaticon</a>
             <BrowserRouter>
             <Navigation />
             <Switch<Route> render={switch} />
