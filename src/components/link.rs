@@ -16,9 +16,12 @@ pub fn link(props: &Props) -> Html {
     };
 
     html! {
-        <div>
+        <tr>
+        <td>
             <a href={props.url.clone()}>{name}</a>
             // <span>{props.desc.clone()}</span>
-        </div>
+        </td>
+        <td>{props.desc.clone()}</td>
+        </tr>
     }
 }

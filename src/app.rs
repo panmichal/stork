@@ -1,4 +1,3 @@
-use crate::components::link;
 use crate::components::LinkList;
 use crate::models::link::Link;
 use serde::{Deserialize, Serialize};
@@ -146,9 +145,9 @@ pub fn app() -> Html {
             <input id="desc-input" placeholder="Description" onchange={on_desc_change} value={fields_state.deref().clone().desc} />
 
             </div>
-            <div class="row"><button class="action-button" type="button" onclick={save}>{"Save"}</button></div>
+            <div class="row-right"><button class="action-button" type="button" onclick={save}>{"Save"}</button></div>
             <div class="row">
-                <LinkList links={(*links_state).clone()} />
+                // <LinkList links={(*links_state).clone()} />
                 </div>
         </main>
     }

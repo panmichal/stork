@@ -11,16 +11,13 @@ pub struct Props {
 pub fn link_list(props: &Props) -> Html {
     html! {
         <div>
-            <h1>{"Link List"}</h1>
-            <ol class={"link-list"}>
+            <table class={"link-list"}>
                 { for props.links.iter().map(|link| {
                     html! {
-                        <li>
-                            <Link url={link.url.clone()} name={link.name.clone()} desc={link.desc.clone()}/>
-                        </li>
+                        <Link url={link.url.clone()} name={link.name.clone()} desc={link.desc.clone()}/>
                     }
                 })}
-                </ol>
+                </table>
         </div>
     }
 }
