@@ -6,3 +6,6 @@ pub use link::Link;
 
 pub mod navigation;
 pub use navigation::Navigation;
+
+pub mod add_form;
+pub use add_form::AddForm;
