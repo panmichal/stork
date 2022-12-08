@@ -1,3 +1,5 @@
+use std::rc::Rc;
+
 use super::link::Link;
 use crate::models::link::Link as LinkModel;
 use serde_wasm_bindgen::from_value;
@@ -39,8 +41,13 @@ pub fn link_list() -> Html {
         <div>
             <table class={"link-list"}>
                 { for links_state.iter().map(|link| {
+                    let url = Rc::from(link.url.as_str());
+                    let name = Rc::from(link.name.as_str());
+                    let desc = Rc::from(link.desc.as_str());
+
+
                     html! {
-                        <Link url={link.url.clone()} name={link.name.clone()} desc={link.desc.clone()}/>
+                        <Link url={url} name={name} desc={desc}/>
                     }
                 })}
                 </table>
