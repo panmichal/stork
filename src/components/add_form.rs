@@ -1,3 +1,4 @@
+use super::FormError;
 use serde::{Deserialize, Serialize};
 use serde_wasm_bindgen::to_value;
 use std::ops::Deref;
@@ -45,13 +46,18 @@ pub fn add_form() -> Html {
         desc: String::new(),
     });
 
+    let form_error: UseStateHandle<Option<&str>> = use_state(|| None);
+
     let cloned_state = fields_state.clone();
+    let cloned_form_error = form_error.clone();
     let on_url_change = Callback::from(move |event: Event| {
         let value = event
             .target()
             .unwrap()
             .unchecked_into::<HtmlInputElement>()
             .value();
+
+        cloned_form_error.set(None);
 
         cloned_state.set(State {
             url: value,
@@ -60,12 +66,15 @@ pub fn add_form() -> Html {
     });
 
     let cloned_state = fields_state.clone();
+    let cloned_form_error = form_error.clone();
     let on_name_change = Callback::from(move |event: Event| {
         let value = event
             .target()
             .unwrap()
             .unchecked_into::<HtmlInputElement>()
             .value();
+
+        cloned_form_error.set(None);
 
         cloned_state.set(State {
             name: value,
@@ -74,6 +83,7 @@ pub fn add_form() -> Html {
     });
 
     let cloned_state = fields_state.clone();
+    let cloned_form_error = form_error.clone();
     let on_desc_change = Callback::from(move |event: Event| {
         let value = event
             .target()
@@ -81,23 +91,27 @@ pub fn add_form() -> Html {
             .unchecked_into::<HtmlInputElement>()
             .value();
 
+        cloned_form_error.set(None);
+
         cloned_state.set(State {
             desc: value,
             ..cloned_state.deref().clone()
         });
     });
 
+    let form_error2 = form_error.clone();
     let save: Callback<MouseEvent> = {
         let state = fields_state.clone();
         let state2 = fields_state.clone();
         Callback::from(move |_| {
             let state = state.clone();
+            let form_error = form_error2.clone();
             spawn_local(async move {
                 if state.url.is_empty() {
                     return;
                 }
 
-                let new_msg = invoke(
+                let result = invoke(
                     "save_link",
                     to_value(&SaveArgs {
                         url: &state.url,
@@ -106,8 +120,14 @@ pub fn add_form() -> Html {
                     })
                     .unwrap(),
                 )
-                .await;
-                log(&new_msg.as_string().unwrap());
+                .await
+                .as_bool();
+
+                if let Some(true) = result {
+                    form_error.set(None);
+                } else {
+                    form_error.set(Some("Error saving link"));
+                }
             });
 
             state2.set(State::default());
@@ -126,7 +146,10 @@ pub fn add_form() -> Html {
     <input id="desc-input" placeholder="Description" onchange={on_desc_change} value={fields_state.deref().clone().desc} />
 
     </div>
-    <div class="row-right"><button class="action-button" type="button" onclick={save}>{"Save"}</button></div>
+    <div class="row-right">
+        <FormError error={*form_error.clone()} />
+        <button class="action-button" type="button" onclick={save}>{"Save"}</button>
+    </div>
         </>
     }
 }

@@ -17,7 +17,7 @@ struct State {
 }
 
 #[tauri::command]
-fn save_link(state: tauri::State<State>, url: &str, name: &str, desc: &str) -> String {
+fn save_link(state: tauri::State<State>, url: &str, name: &str, desc: &str) -> bool {
     let guard = state.data_path.lock().unwrap();
     let data_dir = guard.deref();
     let file_path = format!("{}/links.txt", data_dir);
@@ -27,15 +27,12 @@ fn save_link(state: tauri::State<State>, url: &str, name: &str, desc: &str) -> S
         std::fs::create_dir_all(data_dir).unwrap();
     }
 
-    println!("To save: {}", &string);
     let mut file = OpenOptions::new()
         .create(true)
         .append(true)
         .open(file_path)
         .unwrap();
-    file.write_all(string.as_bytes()).unwrap();
-
-    format!("Saving link: {} {} {}", url, name, desc)
+    file.write_all(string.as_bytes()).is_ok()
 }
 #[tauri::command]
 fn get_links(state: tauri::State<State>) -> Vec<links::Link> {
@@ -79,7 +76,6 @@ fn main() {
         .to_str()
         .unwrap()
         .to_string();
-    println!("App dir: {:?}", app_dir);
 
     let mut app = tauri::Builder::default()
         .manage(State {
@@ -112,7 +108,6 @@ fn main() {
         })
         .on_window_event(|event| match event.event() {
             tauri::WindowEvent::CloseRequested { api, .. } => {
-                println!("Close requested");
                 event.window().hide().unwrap();
                 api.prevent_close();
             }
@@ -126,7 +121,6 @@ fn main() {
     app.set_activation_policy(ActivationPolicy::Accessory);
     app.global_shortcut_manager()
         .register("Cmd+Shift+T", move || {
-            println!("Shortcut pressed");
             toggle_main_window_visibility(&app_handle);
         })
         .unwrap();
