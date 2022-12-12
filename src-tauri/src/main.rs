@@ -12,6 +12,8 @@ use tauri::{CustomMenuItem, SystemTray, SystemTrayEvent, SystemTrayMenu};
 
 mod links;
 
+const FILENAME: &str = "links.txt";
+
 struct State {
     data_path: Mutex<String>,
 }
@@ -20,7 +22,7 @@ struct State {
 fn save_link(state: tauri::State<State>, url: &str, name: &str, desc: &str) -> bool {
     let guard = state.data_path.lock().unwrap();
     let data_dir = guard.deref();
-    let file_path = format!("{}/links.txt", data_dir);
+    let file_path = format!("{}/{}", data_dir, FILENAME);
     let string = format!("{};;{};;{}\n", url, name, desc);
 
     if !std::path::Path::new(data_dir).is_dir() {
@@ -38,7 +40,7 @@ fn save_link(state: tauri::State<State>, url: &str, name: &str, desc: &str) -> b
 fn get_links(state: tauri::State<State>) -> Vec<links::Link> {
     let guard = state.data_path.lock().unwrap();
     let data_dir = guard.deref();
-    let file_path = format!("{}/links.txt", data_dir);
+    let file_path = format!("{}/{}", data_dir, FILENAME);
 
     let links = if std::path::Path::new(&file_path).is_file() {
         let mut file = OpenOptions::new().read(true).open(file_path).unwrap();
