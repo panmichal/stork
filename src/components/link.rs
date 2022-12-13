@@ -20,7 +20,7 @@ pub fn link(props: &Props) -> Html {
     html! {
         <tr>
         <td>
-            <a href={props.url.clone()}>{name}</a>
+            <a href={props.url.clone()} target="_blank">{name}</a>
         </td>
         <td>{props.desc.clone()}</td>
         </tr>
