@@ -8,9 +8,10 @@ use std::io::{Read, Write};
 use std::ops::Deref;
 use std::sync::Mutex;
 use tauri::{ActivationPolicy, GlobalShortcutManager, Manager};
-use tauri::{CustomMenuItem, SystemTray, SystemTrayEvent, SystemTrayMenu};
+use tauri::{CustomMenuItem, SystemTray, SystemTrayEvent, SystemTrayMenu, SystemTrayMenuItem};
 
 mod links;
+mod os;
 
 const FILENAME: &str = "links.txt";
 
@@ -67,9 +68,45 @@ fn toggle_main_window_visibility(app: &tauri::AppHandle) {
     }
 }
 
+fn handle_tray_events(app: &tauri::AppHandle, event: SystemTrayEvent) {
+    match event {
+        SystemTrayEvent::LeftClick { .. } => {
+            let window = match app.get_window("main") {
+                Some(window) => window,
+                None => return,
+            };
+            if let Ok(true) = window.is_visible() {
+                window.hide().unwrap();
+            } else {
+                window.show().unwrap();
+                window.set_focus().unwrap();
+            }
+        }
+        SystemTrayEvent::MenuItemClick { id, .. } => match id.as_str() {
+            "go to folder" => {
+                let state = app.state::<State>();
+                let guard = state.data_path.lock().unwrap();
+                let data_dir = guard.deref();
+                os::show_in_folder(data_dir);
+            }
+            "quit" => {
+                std::process::exit(0);
+            }
+            _ => {}
+        },
+        _ => {
+            println!("Other event");
+        }
+    }
+}
+
 fn main() {
+    let go_to_folder = CustomMenuItem::new("go to folder".to_string(), "Open data folder");
     let quit = CustomMenuItem::new("quit".to_string(), "Quit");
-    let tray_menu = SystemTrayMenu::new().add_item(quit);
+    let tray_menu = SystemTrayMenu::new()
+        .add_item(go_to_folder)
+        .add_native_item(SystemTrayMenuItem::Separator)
+        .add_item(quit);
     let tray = SystemTray::new().with_menu(tray_menu);
     let context = tauri::generate_context!();
 
@@ -81,33 +118,11 @@ fn main() {
 
     let mut app = tauri::Builder::default()
         .manage(State {
-            data_path: Mutex::new(app_dir),
+            data_path: Mutex::new(app_dir.clone()),
         })
         .invoke_handler(tauri::generate_handler![save_link, get_links])
         .system_tray(tray)
-        .on_system_tray_event(|app, event| match event {
-            SystemTrayEvent::LeftClick { .. } => {
-                let window = match app.get_window("main") {
-                    Some(window) => window,
-                    None => return,
-                };
-                if let Ok(true) = window.is_visible() {
-                    window.hide().unwrap();
-                } else {
-                    window.show().unwrap();
-                    window.set_focus().unwrap();
-                }
-            }
-            SystemTrayEvent::MenuItemClick { id, .. } => match id.as_str() {
-                "quit" => {
-                    std::process::exit(0);
-                }
-                _ => {}
-            },
-            _ => {
-                println!("Other event");
-            }
-        })
+        .on_system_tray_event(handle_tray_events)
         .on_window_event(|event| match event.event() {
             tauri::WindowEvent::CloseRequested { api, .. } => {
                 event.window().hide().unwrap();
